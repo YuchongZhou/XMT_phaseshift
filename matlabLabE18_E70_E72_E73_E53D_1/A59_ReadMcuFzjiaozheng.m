@@ -1,0 +1,48 @@
+%清除变量  matlab 严格区分大小写，这里需要特别的注意
+sr3 = serial('COM5');       % 使用默认设置创建串口sr3  根据时间情况来选择串口
+sr3.BaudRate=9600;
+%sr3.BaudRate=115200;
+sr3.Timeout = 1;%读取等待时间1s
+% fclose(sr3);                %关闭串口 
+  fopen(sr3);                 %打开串口  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Send1='aa';%起始字节(B0)
+Send2='01';%ADD(B1)
+Send3='06';%包长(B2)
+Send4='3b';%指令码1(B3) 
+Send5='00';%指令码2(B4)
+
+b={Send1 Send2 Send3 Send4 Send5};
+bInt=hex2dec(b);
+tmpdata1 = uint8(0);
+%whos;
+%将数据抑或 取得抑或位 加入到发送序列中 待发送
+for i=1:5
+tmpdata1  = bitxor(tmpdata1,uint8(bInt(i)),'uint8' );
+f(i)=tmpdata1;%查看每位的抑或位
+a1='fe';%查看数据位
+end  
+ 
+bInt(6)=tmpdata1;  %抑或校验位
+%发送数据 读取电压命令 同时 同时显示电压的数据
+numPoint = 100;
+        
+fwrite(sr3, bInt, 'uint8');%发送读取命令                                                            
+%返回电压命令数据值 
+pause(0.1);
+readN=9; %预定读取的数据长度
+str = fread(sr3,readN);           %读取串口数据（无分号，可在Matlab工作区实时查看）
+%译码过程 将读取到的数据 还原出来以备再次使用
+
+Ch_Flag_0 = str(6);%0通道的状态  89 'Y'表示 有效 ， 78'N' 表示无效
+Ch_Flag_1 = str(7);%0通道的状态  89 'Y'表示 有效 ， 78'N' 表示无效
+Ch_Flag_2 = str(8);%0通道的状态  89 'Y'表示 有效 ， 78'N' 表示无效
+
+pause(0.1);
+
+whos;
+fclose(sr3);                %关闭串口 
+delete(sr3);  
+clear sr3; 
+
